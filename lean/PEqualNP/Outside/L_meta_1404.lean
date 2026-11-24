@@ -1,4 +1,3 @@
-import Mathlib
 import PEqualNP.Defs
 
 namespace PEqualNP.Outside.L_meta_1404
@@ -2034,15 +2033,60 @@ theorem srch_le (P : Nat → Bool) (n : Nat) : srch P (n + 1) ≤ n := by
     · exact Nat.le_succ_of_le ih
     · exact le_rfl
 
-theorem d3_pair (a b : F) (ha : a ∈ DF 2) (hb : b ∈ DF 2) (op : Bool) (hpa : proper (tv a)) (hpb : proper (tv b)) :
-    ∃ w i D c pv, i < 41 ∧ D < 10 ∧ c < 41 ∧ choiceOK i D c pv ∧
-      dom (tv (fun z => bop op (a z) (b z))) (permW w (tv (RowF i D c pv op))) := by
-  obtain ⟨codeA, lfA, hlA, rfl⟩ := DF2_form a ha
-  obtain ⟨codeB, lfB, hlB, rfl⟩ := DF2_form b hb
-  obtain ⟨w1, i, hi, hd1⟩ := d2_cover codeA lfA hlA hpa.1 hpa.2
-  obtain ⟨w2, c, hc, hd2⟩ := d2_cover codeB lfB hlB hpb.1 hpb.2
-  let u := w2 ++ invW w1
-  obtain ⟨D, p, hD, hp, hsig⟩ := sig_nf u
+-- ===== which order of a pair of templates is checked =====
+def orPack : Nat := 0x1a83bffec7e7ee7d7e8f8d2554140010c08075222f74c43221a41f40401cbcd9405489023ec4723a4e53baf05442cb36109dc5843d0c32128df9dc3b0048bff6cac8143f6dc0e08a4bb369040f0f80dcf047c38b3370e103af0c455c43efb71006bc9ff1dbf198c95ef564d02fc7ac1eac0fa6233034c96d9ff974a3c54cd46ef2e82acc0951f39f234859c6fe8fed01557bd795957bb72afcf6beafb9b3bfbfbf8f937ef47f7356514b79f8460e39d7ff0bc5e4c83378e3485560e3a8bd797c8b39d6a3b06728111bb7b7472fd57bfb8e527
+def ocheck (i c : Nat) : Bool := tb orPack (Nat.add (Nat.mul 41 i) c)
+def orientCheck : Bool := allBelow 41 (fun i => allBelow 41 (fun c => ocheck i c || ocheck c i))
+
+set_option maxRecDepth 100000 in
+theorem orientCheck_ok : orientCheck = true := by decide +kernel
+
+theorem orient (i c : Nat) (hi : i < 41) (hc : c < 41) : ocheck i c = true ∨ ocheck c i = true := by
+  have h := allBelow_spec _ _ (allBelow_spec _ _ orientCheck_ok i hi) c hc
+  simp only [Bool.or_eq_true] at h
+  exact h
+
+-- ===== reflections fixing a template, where there is one =====
+def dTPack : Nat := 0x3f3f2f33f3ff242f4fffff2312f141f223f22f2f1
+def pTPack : Nat := 0x10000000000000000000000000000000000000000000000000000000000000000000000000023000000000000000000000000080000000000000000000000000000000000
+def dT (i : Nat) : Nat := fld dTPack 4 i
+def pT (i v : Nat) : Nat := fld (fld pTPack 15 i) 3 v
+def symOK (i : Nat) : Bool := Nat.blt (dT i) 10 && allBelow 5 (fun v => Nat.blt (pT i v) 6) &&
+  Nat.beq (evalT2 (tplAt i) (fun t => lam (dT i) (pT i) (leafOf (tplAt i) t))) (evalT2 (tplAt i) (leafOf (tplAt i)))
+def dcPack : Nat := 0x8765932104765982104365987104325987604321987654321001234567894012395678340128956723401789561234067895
+def dcT (d e : Nat) : Nat := fld dcPack 4 (Nat.add (Nat.mul 10 d) e)
+def dcTCheck : Bool := allBelow 10 (fun d => allBelow 10 (fun e => Nat.beq (dcT d e) (dc d e)))
+def rep2Pack : Nat := 0xd07c0d07c0707c0d0341f0341f07c0702c0707c0b07c1f07c1f07c070340701c1f01c0b01c1f01c070341f01c0707c0707c0707fff07fff07fff07c1fffc1ffffff07c1f07fff07fffffffffffff07c1f07c1fffc1f07c1fffc1f07c1fffc1f07fff07fff07c0d07c0d07c0707c0d0341f0341f07c0702c0707c0b07c1f07c1f07c070340701c1f01c0b01c1f01c070341f01c0707c0707c0707fff07fff07fff07c1fffc1ffffff07c1f07fff07fffffffffffff07c1f07c1fffc1f07c1fffc1f07c1fffc1f07fff07fff07c0707c0707c0707c0701c1f01c1f07c070340707c0d07c1f07c1f07c0701c1301c1f04c0d04c1f01c0701c1f01c0707c0707c1307fff07fff07fff07c1fffc1ffffff07c1f07fff07fffffffffffff07c1f07c1fffc1f07c1fffc1f07c1fffc1f07fff07fff07c0d07c0d07c0707c0d0341f0341f07c0702c0707c0b07c1f07c1f07c070340701c1f01c0b01c1f01c070341f01c0707c0707c070341f0341f01c1f0340d07c0d07c1f01c0b01c1f02c1f07c1f07c1f01c0d01c0707c0702c0707c0701c0d07c0701c1f01c1f01c1fffc1fffc1fffc1f07fff07fffffc1f07c1fffc1fffffffffffffc1f07c1f07fff07c1f07fff07c1f07fff07c1fffc1fffc1f0341f0341f01c1f0340d07c0d07c1f01c0b01c1f02c1f07c1f07c1f01c0d01c0707c0702c0707c0701c0d07c0701c1f01c1f01c1fffc1fffc1fffc1f07fff07fffffc1f07c1fffc1fffffffffffffc1f07c1f07fff07c1f07fff07c1f07fff07c1fffc1fffc1f07fff07fff07fff07c1fffc1ffffff07c1f07fff07fffffffffffff07c1f07c1fffc1f07c1fffc1f07c1fffc1f07fff07fff07c0707c0707c0707c0701c1f01c1f07c070340707c0d07c1f07c1f07c0701c1301c1f04c0d04c1f01c0701c1f01c0707c0707c1302c1f02c1f0341f02c0b07c0b07c1f034130341f04c1f07c1f07c1f0340b01c0d07c0704c0707c0d0340b07c0d0341f0341f01c0707c0707c0707c0701c1f01c1f07c070340707c0d07c1f07c1f07c0701c1301c1f04c0d04c1f01c0701c1f01c0707c0707c1307fff07fff07fff07c1fffc1ffffff07c1f07fff07fffffffffffff07c1f07c1fffc1f07c1fffc1f07c1fffc1f07fff07fff07c0b07c0b07c0d07c0b02c1f02c1f07c0d04c0d07c1307c1f07c1f07c0d02c070341f01c1301c1f0340d02c1f0340d07c0d07c0707fff07fff07fff07c1fffc1ffffff07c1f07fff07fffffffffffff07c1f07c1fffc1f07c1fffc1f07c1fffc1f07fff07fff07c1fffc1fffc1fffc1f07fff07fffffc1f07c1fffc1fffffffffffffc1f07c1f07fff07c1f07fff07c1f07fff07c1fffc1fffc1f07fff07fff07fff07c1fffc1ffffff07c1f07fff07fffffffffffff07c1f07c1fffc1f07c1fffc1f07c1fffc1f07fff07fff07c1fffc1fffc1fffc1f07fff07fffffc1f07c1fffc1fffffffffffffc1f07c1f07fff07c1f07fff07c1f07fff07c1fffc1fffc1f07fff07fff07fff07c1fffc1ffffff07c1f07fff07fffffffffffff07c1f07c1fffc1f07c1fffc1f07c1fffc1f07fff07fff07c0707c0707c0707c0701c1f01c1f07c070340707c0d07c1f07c1f07c0701c1301c1f04c0d04c1f01c0701c1f01c0707c0707c130341f0341f01c1f0340d07c0d07c1f01c0b01c1f02c1f07c1f07c1f01c0d01c0707c0702c0707c0701c0d07c0701c1f01c1f01c0707c0707c1307c0701c1f01c1f07c1301c1307c0707c1f07c1f07c1301c0b04c1f02c0702c1f04c1301c1f04c1307c1307c0b01c1f01c1f01c1f01c0707c0707c1f01c0d01c1f0341f07c1f07c1f01c0704c0707c130341307c0701c0707c0701c1f01c1f04c1fffc1fffc1fffc1f07fff07fffffc1f07c1fffc1fffffffffffffc1f07c1f07fff07c1f07fff07c1f07fff07c1fffc1fffc1f01c1f01c1f04c1f01c0707c0707c1f04c0704c1f01c1f07c1f07c1f04c0702c1307c0b01c0b07c1304c0707c1304c1f04c1f02c0b07c0b07c0d07c0b02c1f02c1f07c0d04c0d07c1307c1f07c1f07c0d02c070341f01c1301c1f0340d02c1f0340d07c0d07c0701c1f01c1f04c1f01c0707c0707c1f04c0704c1f01c1f07c1f07c1f04c0702c1307c0b01c0b07c1304c0707c1304c1f04c1f02c1fffc1fffc1fffc1f07fff07fffffc1f07c1fffc1fffffffffffffc1f07c1f07fff07c1f07fff07c1f07fff07c1fffc1fffc1f01c1f01c1f01c1f01c0707c0707c1f01c0d01c1f0341f07c1f07c1f01c0704c0707c130341307c0701c0707c0701c1f01c1f04c0707c0707c0707c0701c1f01c1f07c070340707c0d07c1f07c1f07c0701c1301c1f04c0d04c1f01c0701c1f01c0707c0707c130341f0341f01c1f0340d07c0d07c1f01c0b01c1f02c1f07c1f07c1f01c0d01c0707c0702c0707c0701c0d07c0701c1f01c1f01c1fffc1fffc1fffc1f07fff07fffffc1f07c1fffc1fffffffffffffc1f07c1f07fff07c1f07fff07c1f07fff07c1fffc1fffc1f01c1f01c1f01c1f01c0707c0707c1f01c0d01c1f0341f07c1f07c1f01c0704c0707c130341307c0701c0707c0701c1f01c1f04c0707c0707c0707c0701c1f01c1f07c070340707c0d07c1f07c1f07c0701c1301c1f04c0d04c1f01c0701c1f01c0707c0707c1307fff07fff07fff07c1fffc1ffffff07c1f07fff07fffffffffffff07c1f07c1fffc1f07c1fffc1f07c1fffc1f07fff07fff07c0707c0707c0707c0701c1f01c1f07c070340707c0d07c1f07c1f07c0701c1301c1f04c0d04c1f01c0701c1f01c0707c0707c1307fff07fff07fff07c1fffc1ffffff07c1f07fff07fffffffffffff07c1f07c1fffc1f07c1fffc1f07c1fffc1f07fff07fff07c0707c0707c1307c0701c1f01c1f07c1301c1307c0707c1f07c1f07c1301c0b04c1f02c0702c1f04c1301c1f04c1307c1307c0b
+def repOK2 (i c D : Nat) : Bool := tb (fld rep2Pack 10 (Nat.add (Nat.mul 41 i) c)) D
+def symCheck : Bool := allBelow 41 (fun i => allBelow 41 (fun c => !ocheck i c || allBelow 10 (fun D =>
+  repOK2 i c D || (symOK i && repOK2 i c (dcT (dT i) D)) || (symOK c && repOK2 i c (dcT D (dT c))) ||
+  (symOK i && symOK c && repOK2 i c (dcT (dcT (dT i) D) (dT c))))))
+
+set_option maxRecDepth 100000 in
+theorem dcTCheck_ok : dcTCheck = true := by decide +kernel
+set_option maxRecDepth 100000 in
+theorem symCheck_ok : symCheck = true := by decide +kernel
+
+theorem dcT_eq (d e : Nat) (hd : d < 10) (he : e < 10) : dcT d e = dc d e :=
+  Nat.eq_of_beq_eq_true (allBelow_spec _ _ (allBelow_spec _ _ dcTCheck_ok d hd) e he)
+
+theorem sym_valid (i : Nat) (hi : i < 41) (h : symOK i = true) :
+    dT i < 10 ∧ (∀ v, v < 5 → pT i v < 6) ∧
+    ∃ t : List Nat, (∀ x, x < 15 → sig t x = lam (dT i) (pT i) x) ∧ permW t (tv (TF i)) = tv (TF i) := by
+  simp only [symOK, Bool.and_eq_true, Nat.blt_eq] at h
+  obtain ⟨⟨h1, h3⟩, h4⟩ := h
+  have hp : ∀ v, v < 5 → pT i v < 6 := fun v hv => by
+    have := allBelow_spec _ _ h3 v hv; simpa [Nat.blt_eq] using this
+  refine ⟨h1, hp, ?_⟩
+  obtain ⟨t, ht⟩ := lam_real (dT i) (pT i) h1 hp
+  refine ⟨t, ht, ?_⟩
+  have hl : ∀ j, j < 4 → leafOf (tplAt i) j < 15 := fun j hj => tplLeaf_lt i j hi hj
+  rw [← tv_actW, actW_sig, act_congr _ _ ht, TF, act_F2 _ _ _ hl, tv_F2, tv_F2]
+  exact Nat.eq_of_beq_eq_true h4
+theorem d3_core0 (a b : F) (op : Bool) (w1 u : List Nat) (i : Nat) (hi : i < 41) (hd1 : dom (tv a) (permW w1 (tv (TF i))))
+    (c : Nat) (hc : c < 41) (hd2 : dom (tv b) (permW w1 (permW u (tv (TF c)))))
+    (D : Nat) (p : Nat → Nat) (hD : D < 10) (hp : ∀ v, v < 5 → p v < 6) (hsig : ∀ x, x < 15 → sig u x = lam D p x) :
+    ∃ w pv, choiceOK i D c pv ∧ dom (tv (fun z => bop op (a z) (b z))) (permW w (tv (RowF i D c pv op))) := by
   let ci := tplAt i
   let cc := tplAt c
   have hlI : ∀ t, t < 4 → leafOf ci t < 15 := fun t ht => tplLeaf_lt i t hi ht
@@ -2124,33 +2168,115 @@ theorem d3_pair (a b : F) (ha : a ∈ DF 2) (hb : b ∈ DF 2) (op : Bool) (hpa :
     rw [e, tv_bop, TF]
     rw [F2_congr ci ci (leafOf ci) (fun t => lam 5 s (leafOf ci t)) (fun _ _ => rfl) (fun t ht => (hE2 t ht).symm)]
     rw [F2_congr cc cc (fun t => lam D p (leafOf cc t)) (fun t => lam 5 s (placeL cc D pv t)) (fun _ _ => rfl) hE1]
-  refine ⟨ws ++ w1, i, D, c, pv, hi, hD, hc, hchoice, ?_⟩
+  refine ⟨ws ++ w1, pv, hchoice, ?_⟩
+  rw [tv_bop, permW_append, ← hrow, permW_gate]
+  exact dom_gate op hd1 hd2
+
+def St (a b : F) (i c : Nat) (w1 u : List Nat) (D : Nat) : Prop :=
+  ∃ p : Nat → Nat, D < 10 ∧ (∀ v, v < 5 → p v < 6) ∧ (∀ x, x < 15 → sig u x = lam D p x) ∧
+    dom (tv a) (permW w1 (tv (TF i))) ∧ dom (tv b) (permW w1 (permW u (tv (TF c))))
+
+theorem adjL (a b : F) (i c : Nat) (hi : i < 41) (hs : symOK i = true) (w1 u : List Nat) (D : Nat)
+    (h : St a b i c w1 u D) : ∃ w1' u', St a b i c w1' u' (dc (dT i) D) := by
+  obtain ⟨p, hD, hp, hsig, hd1, hd2⟩ := h
+  obtain ⟨hdt, hpt, t, ht, hst⟩ := sym_valid i hi hs
+  have hti : permW (invW t) (tv (TF i)) = tv (TF i) := by
+    conv => lhs; rw [← hst]
+    exact permW_inv t _ (tv_lt _)
+  refine ⟨invW t ++ w1, u ++ t, fun v => pcomp (pT i (dmapC D v)) (p v), (dc_spec (dT i) D 0 hdt hD (by norm_num)).1,
+    fun v hv => (pcomp_spec _ _ 0 (hpt _ (dmapC_lt _ _)) (hp v hv) (by norm_num)).1, ?_, ?_, ?_⟩
+  · intro x hx
+    have hlx : lam D p x < 15 := lam_lt D p x hx (hp _ (Nat.mod_lt _ (by norm_num)))
+    rw [sig_append, hsig x hx, ht _ hlx, lam_comp (dT i) D (pT i) p hdt hD hpt hp x hx]
+  · rw [permW_append, hti]; exact hd1
+  · rw [permW_append, permW_append u t, permW_inv t _ (permW_lt _ _ (tv_lt _))]; exact hd2
+
+theorem adjR (a b : F) (i c : Nat) (hc : c < 41) (hs : symOK c = true) (w1 u : List Nat) (D : Nat)
+    (h : St a b i c w1 u D) : ∃ w1' u', St a b i c w1' u' (dc D (dT c)) := by
+  obtain ⟨p, hD, hp, hsig, hd1, hd2⟩ := h
+  obtain ⟨hdt, hpt, t, ht, hst⟩ := sym_valid c hc hs
+  refine ⟨w1, t ++ u, fun v => pcomp (p (dmapC (dT c) v)) (pT c v), (dc_spec D (dT c) 0 hD hdt (by norm_num)).1,
+    fun v hv => (pcomp_spec _ _ 0 (hp _ (dmapC_lt _ _)) (hpt v hv) (by norm_num)).1, ?_, hd1, ?_⟩
+  · intro x hx
+    have hlx : lam (dT c) (pT c) x < 15 := lam_lt _ _ x hx (hpt _ (Nat.mod_lt _ (by norm_num)))
+    rw [sig_append, ht x hx, hsig _ hlx, lam_comp D (dT c) p (pT c) hD hdt hp hpt x hx]
+  · rw [permW_append, hst]; exact hd2
+
+theorem d3_fin (a b : F) (op : Bool) (i c : Nat) (hi : i < 41) (hc : c < 41) (w1 u : List Nat) (D : Nat)
+    (h : St a b i c w1 u D) (hr : repOK2 i c D = true) :
+    ∃ w D pv, D < 10 ∧ repOK2 i c D = true ∧ choiceOK i D c pv ∧
+      dom (tv (fun z => bop op (a z) (b z))) (permW w (tv (RowF i D c pv op))) := by
+  obtain ⟨p, hD, hp, hsig, hd1, hd2⟩ := h
+  obtain ⟨w, pv, hch, hdom⟩ := d3_core0 a b op w1 u i hi hd1 c hc hd2 D p hD hp hsig
+  exact ⟨w, D, pv, hD, hr, hch, hdom⟩
+
+theorem d3_core (a b : F) (op : Bool) (w1 : List Nat) (i : Nat) (hi : i < 41) (hd1 : dom (tv a) (permW w1 (tv (TF i))))
+    (w2 : List Nat) (c : Nat) (hc : c < 41) (hd2 : dom (tv b) (permW w2 (tv (TF c)))) (ho : ocheck i c = true) :
+    ∃ w D pv, D < 10 ∧ repOK2 i c D = true ∧ choiceOK i D c pv ∧
+      dom (tv (fun z => bop op (a z) (b z))) (permW w (tv (RowF i D c pv op))) := by
+  let u := w2 ++ invW w1
   have hu : permW w2 (tv (TF c)) = permW w1 (permW u (tv (TF c))) := by
     show _ = permW w1 (permW (w2 ++ invW w1) (tv (TF c)))
     rw [permW_append, permW_inv' w1 _ (permW_lt _ _ (tv_lt _))]
-  rw [tv_bop, permW_append, ← hrow, permW_gate, ← hu]
-  exact dom_gate op hd1 hd2
-
+  rw [hu] at hd2
+  obtain ⟨D, p, hD, hp, hsig⟩ := sig_nf u
+  have hst : St a b i c w1 u D := ⟨p, hD, hp, hsig, hd1, hd2⟩
+  have h1 := allBelow_spec _ _ (allBelow_spec _ _ symCheck_ok i hi) c hc
+  simp only [ho, Bool.not_true, Bool.false_or] at h1
+  have hk := allBelow_spec _ _ h1 D hD
+  simp only [Bool.or_eq_true, Bool.and_eq_true] at hk
+  rcases hk with ((hr | ⟨hs, hr⟩) | ⟨hs, hr⟩) | ⟨⟨hs1, hs2⟩, hr⟩
+  · exact d3_fin a b op i c hi hc w1 u D hst hr
+  · obtain ⟨hdt, -⟩ := sym_valid i hi hs
+    rw [dcT_eq _ _ hdt hD] at hr
+    obtain ⟨w1', u', h'⟩ := adjL a b i c hi hs w1 u D hst
+    exact d3_fin a b op i c hi hc w1' u' _ h' hr
+  · obtain ⟨hdt, -⟩ := sym_valid c hc hs
+    rw [dcT_eq _ _ hD hdt] at hr
+    obtain ⟨w1', u', h'⟩ := adjR a b i c hc hs w1 u D hst
+    exact d3_fin a b op i c hi hc w1' u' _ h' hr
+  · obtain ⟨hdt1, -⟩ := sym_valid i hi hs1
+    obtain ⟨hdt2, -⟩ := sym_valid c hc hs2
+    have hD1 : dc (dT i) D < 10 := (dc_spec (dT i) D 0 hdt1 hD (by norm_num)).1
+    rw [dcT_eq _ _ hdt1 hD, dcT_eq _ _ hD1 hdt2] at hr
+    obtain ⟨w1', u', h'⟩ := adjL a b i c hi hs1 w1 u D hst
+    obtain ⟨w1'', u'', h''⟩ := adjR a b i c hc hs2 w1' u' _ h'
+    exact d3_fin a b op i c hi hc w1'' u'' _ h'' hr
+theorem d3_pair (a b : F) (ha : a ∈ DF 2) (hb : b ∈ DF 2) (op : Bool) (hpa : proper (tv a)) (hpb : proper (tv b)) :
+    ∃ w i D c pv, i < 41 ∧ D < 10 ∧ c < 41 ∧ ocheck i c = true ∧ repOK2 i c D = true ∧ choiceOK i D c pv ∧
+      dom (tv (fun z => bop op (a z) (b z))) (permW w (tv (RowF i D c pv op))) := by
+  obtain ⟨codeA, lfA, hlA, rfl⟩ := DF2_form a ha
+  obtain ⟨codeB, lfB, hlB, rfl⟩ := DF2_form b hb
+  obtain ⟨w1, i, hi, hd1⟩ := d2_cover codeA lfA hlA hpa.1 hpa.2
+  obtain ⟨w2, c, hc, hd2⟩ := d2_cover codeB lfB hlB hpb.1 hpb.2
+  rcases orient i c hi hc with ho | ho
+  · obtain ⟨w, D, pv, hD, hrp, hch, hdom⟩ := d3_core _ _ op w1 i hi hd1 w2 c hc hd2 ho
+    exact ⟨w, i, D, c, pv, hi, hD, hc, ho, hrp, hch, hdom⟩
+  · obtain ⟨w, D, pv, hD, hrp, hch, hdom⟩ := d3_core _ _ op w2 c hc hd2 w1 i hi hd1 ho
+    refine ⟨w, c, D, i, pv, hc, hD, hi, ho, hrp, hch, ?_⟩
+    rw [tv_bop] at hdom ⊢
+    rw [gate_comm]
+    exact hdom
 theorem d3_cover (g : F) (hg : g ∈ DF 3) (hp : proper (tv g)) :
-    ∃ w i D c pv op, i < 41 ∧ D < 10 ∧ c < 41 ∧ choiceOK i D c pv ∧
+    ∃ w i D c pv op, i < 41 ∧ D < 10 ∧ c < 41 ∧ ocheck i c = true ∧ repOK2 i c D = true ∧ choiceOK i D c pv ∧
       dom (tv g) (permW w (tv (RowF i D c pv op))) := by
   obtain ⟨op, a, b, ha, hb, rfl⟩ := DF3_form g hg
   rw [tv_bop] at hp
   by_cases hpb : proper (tv b)
   · by_cases hpa : proper (tv a)
-    · obtain ⟨w, i, D, c, pv, h1, h2, h3, h4, h5⟩ := d3_pair a b ha hb op hpa hpb
-      exact ⟨w, i, D, c, pv, op, h1, h2, h3, h4, h5⟩
+    · obtain ⟨w, i, D, c, pv, h1, h2, h3, h0, hr0, h4, h5⟩ := d3_pair a b ha hb op hpa hpb
+      exact ⟨w, i, D, c, pv, op, h1, h2, h3, h0, hr0, h4, h5⟩
     · have hp' : proper (gate op (tv b) (tv a)) := by rw [gate_comm]; exact hp
       obtain ⟨hdom, hpb'⟩ := improper_child op (tv b) (tv a) hp' hpa
-      obtain ⟨w, i, D, c, pv, h1, h2, h3, h4, h5⟩ := d3_pair b b hb hb false hpb' hpb'
-      refine ⟨w, i, D, c, pv, false, h1, h2, h3, h4, ?_⟩
+      obtain ⟨w, i, D, c, pv, h1, h2, h3, h0, hr0, h4, h5⟩ := d3_pair b b hb hb false hpb' hpb'
+      refine ⟨w, i, D, c, pv, false, h1, h2, h3, h0, hr0, h4, ?_⟩
       have e : gate false (tv b) (tv b) = tv b := Nat.and_self _
       rw [tv_bop, e] at h5
       rw [tv_bop, gate_comm]
       exact dom_trans hdom h5
   · obtain ⟨hdom, hpa'⟩ := improper_child op (tv a) (tv b) hp hpb
-    obtain ⟨w, i, D, c, pv, h1, h2, h3, h4, h5⟩ := d3_pair a a ha ha false hpa' hpa'
-    refine ⟨w, i, D, c, pv, false, h1, h2, h3, h4, ?_⟩
+    obtain ⟨w, i, D, c, pv, h1, h2, h3, h0, hr0, h4, h5⟩ := d3_pair a a ha ha false hpa' hpa'
+    refine ⟨w, i, D, c, pv, false, h1, h2, h3, h0, hr0, h4, ?_⟩
     rw [tv_bop] at h5
     have e : gate false (tv a) (tv a) = tv a := Nat.and_self _
     rw [e] at h5
@@ -3928,11 +4054,8 @@ def genGo (i D c ms : Nat) : Nat → Nat → Nat → Bool
   | k + 1, v, pv => allBelow 6 (fun p => !tb ms (Nat.add (Nat.mul 6 v) p) ||
       genGo i D c ms k (Nat.add v 1) (Nat.add pv (Nat.shiftLeft p (Nat.mul 3 v))))
 
-def seedOK (idx : Nat) : Bool :=
-  genGo (Nat.div idx 410) (Nat.mod (Nat.div idx 41) 10) (Nat.mod idx 41)
-    (masksOf (Nat.div idx 410) (Nat.mod (Nat.div idx 41) 10) (Nat.mod idx 41)) 5 0 0
-
-def rangeOK (a n : Nat) : Bool := allBelow n (fun j => seedOK (Nat.add a j))
+def pairOK (i c : Nat) : Bool := allBelow 10 (fun D => !repOK2 i c D || genGo i D c (masksOf i D c) 5 0 0)
+def HallP : Prop := ∀ i c, i < 41 → c < 41 → ocheck i c = true → pairOK i c = true
 
 -- ===== correctness of the generation =====
 def accOf (ch : Nat → Nat) : Nat → Nat → Nat → Nat
@@ -3987,15 +4110,12 @@ theorem rowPairOK_spec (i D c pv : Nat) (hi : i < 41) (hc : c < 41) (hpv : ∀ w
       unfold RowF; rw [tv_bop]; rfl
     rw [e]; exact h.2
 
-theorem stream_spec (hall : ∀ idx, idx < 16810 → seedOK idx = true) (i D c pv : Nat) (rop : Bool)
-    (hi : i < 41) (hD : D < 10) (hc : c < 41) (hch : choiceOK i D c pv) : RowSem (tv (RowF i D c pv rop)) := by
-  let idx := 410 * i + 41 * D + c
-  have h := hall idx (by omega)
-  have e1 : Nat.div idx 410 = i := by show idx / 410 = i; omega
-  have e2 : Nat.mod (Nat.div idx 41) 10 = D := by show idx / 41 % 10 = D; omega
-  have e3 : Nat.mod idx 41 = c := by show idx % 41 = c; omega
-  unfold seedOK at h
-  rw [e1, e2, e3] at h
+theorem stream_spec (hall : HallP) (i D c pv : Nat) (rop : Bool)
+    (hi : i < 41) (hD : D < 10) (hc : c < 41) (ho : ocheck i c = true) (hrp : repOK2 i c D = true) (hch : choiceOK i D c pv) :
+    RowSem (tv (RowF i D c pv rop)) := by
+  have h0 : (!repOK2 i c D || genGo i D c (masksOf i D c) 5 0 0) = true := allBelow_spec _ _ (hall i c hi hc ho) D hD
+  rw [hrp, Bool.not_true, Bool.false_or] at h0
+  have h : genGo i D c (masksOf i D c) 5 0 0 = true := h0
   let ch := fun w => pvF pv w
   have hm : ∀ w, w < 5 → ch w < 6 ∧ tb (masksOf i D c) (6 * w + ch w) = true := by
     intro w hw
@@ -4072,13 +4192,13 @@ theorem dom_permW_trans {t r : Nat} (w : List Nat) (hd : dom t (permW w r)) (x :
 
 -- ===== facts about depth-three rectangles from the stream =====
 section
-variable (hall : ∀ idx, idx < 16810 → seedOK idx = true)
+variable (hall : HallP)
 include hall
 
 theorem d3_row (g : F) (hg : g ∈ DF 3) (hp : proper (tv g)) :
     ∃ w r, r < 2 ^ 180 ∧ RowSem r ∧ dom (tv g) (permW w r) := by
-  obtain ⟨w, i, D, c, pv, op, hi, hD, hc, hch, hd⟩ := d3_cover g hg hp
-  exact ⟨w, _, tv_lt _, stream_spec hall i D c pv op hi hD hc hch, hd⟩
+  obtain ⟨w, i, D, c, pv, op, hi, hD, hc, ho, hrp, hch, hd⟩ := d3_cover g hg hp
+  exact ⟨w, _, tv_lt _, stream_spec hall i D c pv op hi hD hc ho hrp hch, hd⟩
 
 theorem d3_caps (g : F) (hg : g ∈ DF 3) : Caps (cA (tv g)) (cB (tv g)) := by
   by_cases hp : proper (tv g)
@@ -4139,7 +4259,7 @@ theorem crit_of_hit (g : Nat) (hg : g < 2) (t : Nat) (ht : t < 2 ^ 180) (w : Lis
   exact dom_trans (dom_permW w' this) hd'
 
 section
-variable (hall : ∀ idx, idx < 16810 → seedOK idx = true)
+variable (hall : HallP)
 include hall
 
 -- a high child dominated by a representative image, combined with any proper depth-three child
@@ -6040,7 +6160,7 @@ def P4 (t : Nat) : Prop :=
   (21 ≤ cA t → 68 ≤ cB t → cA t ≤ 24 ∧ cB t ≤ 86 ∧ ∃ w m, m < 58 ∧ dom (permW w t) (targetT m)) ∧
   (∀ m, m < 37 → (∀ p, 45 ≤ p → p < 180 → (targetT m).testBit p = true → t.testBit p = false) → Gamma (t &&& targetT m))
 
-theorem P4_gate (hall : ∀ idx, idx < 16810 → seedOK idx = true) (hcomp : ∀ m, m < 37 → compCheck m = true)
+theorem P4_gate (hall : HallP) (hcomp : ∀ m, m < 37 → compCheck m = true)
     (op : Bool) (a b : F) (ha : a ∈ DF 3) (hb : b ∈ DF 3) : P4 (gate op (tv a) (tv b)) :=
   ⟨lemmaA hall op a b ha hb, lemmaB hall op a b ha hb, fun h1 h2 => lemmaC hall op a b ha hb h1 h2,
     fun m hm hrej => cond4 hcomp m hm op a b ha hb hrej⟩
@@ -6049,7 +6169,7 @@ theorem actW_bop (w : List Nat) (op : Bool) (a b : F) :
     actW w (fun z => bop op (a z) (b z)) = fun z => bop op (actW w a z) (actW w b z) := by
   rw [actW_sig, actW_sig, actW_sig]; rfl
 
-theorem L34 (hall : ∀ idx, idx < 16810 → seedOK idx = true) (hcomp : ∀ m, m < 37 → compCheck m = true)
+theorem L34 (hall : HallP) (hcomp : ∀ m, m < 37 → compCheck m = true)
     (op : Bool) (a b : F) (ha : a ∈ DF 3) (hb : b ∈ DF 3) (w : List Nat) :
     P4 (permW w (tv (fun z => bop op (a z) (b z)))) := by
   rw [← tv_actW, actW_bop, tv_bop]
@@ -6343,19 +6463,29 @@ def wStarCheck : Bool :=
   allBelow 75 (fun s1 => allBelow (Nat.add s1 1) (fun s2 => allBelow 10 (fun d =>
     Nat.ble (sumF (fun e => min 9 (omegaAt d e + aE9 e (Nat.lor (sA s1) (sA s2)))) 5) 44)))
 
-def tripleCheck : Bool :=
-  allBelow 75 (fun s1 => allBelow (Nat.add s1 1) (fun s2 => allBelow (Nat.add s2 1) (fun s3 =>
+def tripleBody (s1 : Nat) : Bool :=
+  allBelow (Nat.add s1 1) (fun s2 => Nat.ble (cA9 (Nat.lor (sA s1) (sA s2))) 20 || allBelow (Nat.add s2 1) (fun s3 =>
     Nat.ble (cA9 (Nat.lor (Nat.lor (sA s1) (sA s2)) (sA s3))) 35 &&
     (Nat.ble (cA9 (Nat.lor (Nat.lor (sA s1) (sA s2)) (sA s3))) 32 ||
       allBelow 75 (fun s4 => !Nat.beq (Nat.land (Nat.xor (Nat.land (Nat.lor (Nat.lor (sA s1) (sA s2)) (sA s3)) MA) MA)
-        (Nat.xor (sA s4) MA)) 0)))))
+        (Nat.xor (sA s4) MA)) 0))))
 
 set_option maxRecDepth 100000 in
 theorem starSizeCheck_ok : starSizeCheck = true := by decide +kernel
 set_option maxRecDepth 100000 in
 theorem wStarCheck_ok : wStarCheck = true := by decide +kernel
 set_option maxRecDepth 100000 in
-theorem tripleCheck_ok : tripleCheck = true := by decide +kernel
+theorem tripleA_ok : allBelow 40 tripleBody = true := by decide +kernel
+set_option maxRecDepth 100000 in
+theorem tripleB_ok : allBelow 35 (fun k => tripleBody (Nat.add 40 k)) = true := by decide +kernel
+
+theorem triple_body (a : Nat) (ha : a < 75) : tripleBody a = true := by
+  by_cases h : a < 40
+  · exact allBelow_spec _ _ tripleA_ok a h
+  · have e : Nat.add 40 (a - 40) = a := by show 40 + (a - 40) = a; omega
+    have := allBelow_spec _ _ tripleB_ok (a - 40) (by omega)
+    rw [e] at this
+    exact this
 
 theorem aE9_eq (e x : Nat) : aE9 e x = aE e x := by
   unfold aE9 aE; rw [pop9_eq _ (fld_lt _ _ _), cntR_fld9]
@@ -6396,10 +6526,20 @@ theorem Gamma_le (x : Nat) (h : Gamma x) : cA x ≤ 22 := by rcases h with h | �
 theorem tri_sorted (a b c : Nat) (ha : a < 75) (hb : b ≤ a) (hc : c ≤ b) :
     cA (sA a ||| sA b ||| sA c) ≤ 35 ∧
     (33 ≤ cA (sA a ||| sA b ||| sA c) → ∀ d, d < 75 → ¬ (∀ p, p < 45 → (sA a ||| sA b ||| sA c ||| sA d).testBit p = true)) := by
-  have h := allBelow_spec _ _ (allBelow_spec _ _ (allBelow_spec _ _ tripleCheck_ok a ha) b (Nat.lt_succ_of_le hb)) c
-    (Nat.lt_succ_of_le hc)
+  have hab := allBelow_spec _ _ (triple_body a ha) b (Nat.lt_succ_of_le hb)
   have el : ∀ x y : Nat, Nat.lor x y = x ||| y := fun _ _ => rfl
-  simp only [Bool.and_eq_true, Bool.or_eq_true, Nat.ble_eq, cA9_eq, el] at h
+  simp only [Bool.or_eq_true, Nat.ble_eq, cA9_eq, el] at hab
+  have h : cA (sA a ||| sA b ||| sA c) ≤ 35 ∧
+      (cA (sA a ||| sA b ||| sA c) ≤ 32 ∨ allBelow 75 (fun s4 => !Nat.beq (Nat.land (Nat.xor (Nat.land
+        (Nat.lor (Nat.lor (sA a) (sA b)) (sA c)) MA) MA) (Nat.xor (sA s4) MA)) 0) = true) := by
+    rcases hab with hab | hab
+    · have h1 := cA_or_le (sA a ||| sA b) (sA c)
+      have h2 := star_size c (by omega)
+      rw [← sA_eq c (by omega)] at h2
+      exact ⟨by omega, Or.inl (by omega)⟩
+    · have h3 := allBelow_spec _ _ hab c (Nat.lt_succ_of_le hc)
+      simp only [Bool.and_eq_true, Bool.or_eq_true, Nat.ble_eq, cA9_eq, el] at h3
+      exact h3
   refine ⟨h.1, fun h33 d hd hcov => ?_⟩
   rcases h.2 with h2 | h2
   · omega
@@ -6597,7 +6737,7 @@ def Tfam : Nat → Set F
   | _ => Set.univ
 
 section
-variable (hall : ∀ idx, idx < 16810 → seedOK idx = true) (hcomp : ∀ m, m < 37 → compCheck m = true)
+variable (hall : HallP) (hcomp : ∀ m, m < 37 → compCheck m = true)
 include hall hcomp
 
 theorem Tfam_closed (k : Nat) (f g : F) (hf : f ∈ Tfam k) (hg : g ∈ Tfam k) :
@@ -6651,223 +6791,79 @@ theorem fTarget_B : cB (tv fTarget) = 135 := by decide +kernel
 theorem fTarget_not6 : fTarget ∉ Tfam 6 := fun h => h ⟨fTarget_A, fTarget_B⟩
 
 -- ===== the finite checks =====
-theorem range_get (a n : Nat) (h : rangeOK a n = true) (idx : Nat) (h1 : a <= idx) (h2 : idx < a + n) :
-    seedOK idx = true := by
-  have h3 : seedOK (Nat.add a (idx - a)) = true := allBelow_spec _ _ h (idx - a) (by omega)
-  have e : Nat.add a (idx - a) = idx := by show a + (idx - a) = idx; omega
-  rw [e] at h3; exact h3
+def chunkPack : Nat := 0x13802803800000002040c010808f0c308c0822cb0c024300000509014534000f0463101c018c3000052071c800601030e15010034000018d18820000009000a00038000900800100500500000000900500000000000000000000500000008d0000000001400000000000032090010060002c00001c00003c01821420082c700b00040d0000100000000420000c000038000000108034000d00000000224b3cd00100000000000700000000000001018400018014820400018f00140001000200000000001000500c0003c00001800060000000003000003851461802ca00000400000a34a0002400002842002c001000024338000500b00018e20008d04008004d34e00000000800400c00000c0000004003cf0003c02460003030053c00000020000001c000d1c600814300000f00d40000000100000010e2870090000002080000000d00000c000000b0002c038000008b0073c114310000a34f01034f00000040d1803c100000000000000600004000018008528f04a20314800424024300010008014e00024000000000d00a0000003032813cd00838020c0063420000000001862800000001c00002802000040003003c50c00ca0004010052003c00070000000090000000002862890000002cb1c93800000000000860052c900004428f00000000c00000f1c80cb00000024e2800003002900001c400008500e0c100000028210000000a00000000008b3c024028b08b0000001c900000f00000400400300c0cb00000700000020d10e04038e10810024400e3500000030000000000000050403c01cc1010001c000814d08529041000000429000f28010938814a00001038000c04000014800020000300f00324a40024f04a00700100b08000d0003410010000000003003c214b0c100000a04e34004018b00000000e30920024010034300000000018e30e2800400033c00001c00001c900018800000000024f00200004200010000400424028700c20000b1ca3440cb04d0c000a00730200c0002801400002880ce00000c01000200030100004c01000f00000534018530040d10200038024f24020000000004008038014b0003cb0000000000800090070030000020c840e0001431c00083441450001400001c30070000c000000f00e14000f04100000b1002c308d3032c004000024c4093c31c010e00300000000000c00800e00e0050020ca1c014724c00e00f3c628000e00700e30000100800700a3851003ce20024a00e18c0002400803000880cd10c0001463c400b1c01401422d00404001c008b34238024e08000f1c01c100040c30018d4062471002cc04a1902c00812843c91000003043cb0c000b0003090031c130a10008b40800700000e2cb3c138400c2460001c600200300618000700f00000100100024040b00a04a34000808728e34000000d00000f20000000010d3400001082c000330200400934e30d30b18228b0000002001ca31000000d00c08f3400100003cf0004000000000c50001c60101082800004061c00002d000e0002000000030060100040091800000000c71400002481002001c000008024908600c00810a04000400904c3900001400003c04090002cc2c000c1470100070c03401000001842c02cd00000000d34000e0cc0003802c000000000600000600001004004624040f00e34628040f00810f0030000062ce00040014d0ca24500a00900b0021cb1c02cd20834540018c1c00003cd38000901000018000e283
+def chunkOf (i c : Nat) : Nat := fld chunkPack 6 (Nat.add (Nat.mul 41 i) c)
+def chunkOK (k : Nat) : Bool :=
+  allBelow 41 (fun i => allBelow 41 (fun c => !Nat.beq (chunkOf i c) (Nat.add k 1) || pairOK i c))
+def codeBound : Bool :=
+  allBelow 41 (fun i => allBelow 41 (fun c => !ocheck i c || (Nat.blt 0 (chunkOf i c) && Nat.ble (chunkOf i c) 16)))
 
-theorem seed_step (a n b : Nat) (hb : a + n = b) (h : rangeOK a n = true)
-    (rest : forall idx, b <= idx -> idx < 16810 -> seedOK idx = true) :
-    forall idx, a <= idx -> idx < 16810 -> seedOK idx = true := by
-  intro idx h1 h2
-  by_cases h3 : idx < b
-  . exact range_get a n h idx h1 (by omega)
-  . exact rest idx (by omega) h2
+set_option maxRecDepth 100000 in
+theorem codeBound_ok : codeBound = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch0 : rangeOK 0 410 = true := by decide +kernel
+theorem ck0 : chunkOK 0 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch1 : rangeOK 410 410 = true := by decide +kernel
+theorem ck1 : chunkOK 1 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch2 : rangeOK 820 410 = true := by decide +kernel
+theorem ck2 : chunkOK 2 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch3 : rangeOK 1230 410 = true := by decide +kernel
+theorem ck3 : chunkOK 3 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch4x0 : rangeOK 1640 41 = true := by decide +kernel
+theorem ck4 : chunkOK 4 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch4x1 : rangeOK 1681 41 = true := by decide +kernel
+theorem ck5 : chunkOK 5 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch4x2 : rangeOK 1722 41 = true := by decide +kernel
+theorem ck6 : chunkOK 6 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch4x3 : rangeOK 1763 41 = true := by decide +kernel
+theorem ck7 : chunkOK 7 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch4x4 : rangeOK 1804 41 = true := by decide +kernel
+theorem ck8 : chunkOK 8 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch4x5 : rangeOK 1845 41 = true := by decide +kernel
+theorem ck9 : chunkOK 9 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch4x6 : rangeOK 1886 41 = true := by decide +kernel
+theorem ck10 : chunkOK 10 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch4x7 : rangeOK 1927 41 = true := by decide +kernel
+theorem ck11 : chunkOK 11 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch4x8 : rangeOK 1968 41 = true := by decide +kernel
+theorem ck12 : chunkOK 12 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch4x9 : rangeOK 2009 41 = true := by decide +kernel
+theorem ck13 : chunkOK 13 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch5 : rangeOK 2050 410 = true := by decide +kernel
+theorem ck14 : chunkOK 14 = true := by decide +kernel
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
-theorem ch6 : rangeOK 2460 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch7 : rangeOK 2870 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch8 : rangeOK 3280 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch9 : rangeOK 3690 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch10 : rangeOK 4100 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch11 : rangeOK 4510 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch12 : rangeOK 4920 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch13 : rangeOK 5330 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch14 : rangeOK 5740 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch15 : rangeOK 6150 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch16 : rangeOK 6560 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch17 : rangeOK 6970 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch18 : rangeOK 7380 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch19 : rangeOK 7790 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch20 : rangeOK 8200 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch21 : rangeOK 8610 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch22 : rangeOK 9020 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch23 : rangeOK 9430 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch24 : rangeOK 9840 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch25 : rangeOK 10250 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch26 : rangeOK 10660 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch27 : rangeOK 11070 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch28 : rangeOK 11480 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch29 : rangeOK 11890 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch30 : rangeOK 12300 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch31 : rangeOK 12710 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch32 : rangeOK 13120 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch33 : rangeOK 13530 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch34 : rangeOK 13940 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch35 : rangeOK 14350 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch36 : rangeOK 14760 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch37 : rangeOK 15170 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch38 : rangeOK 15580 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch39 : rangeOK 15990 410 = true := by decide +kernel
-set_option maxRecDepth 100000 in
-set_option maxHeartbeats 0 in
-theorem ch40 : rangeOK 16400 410 = true := by decide +kernel
+theorem ck15 : chunkOK 15 = true := by decide +kernel
 
-theorem allSeeds : forall idx, idx < 16810 -> seedOK idx = true := fun idx h =>
-  (seed_step 0 410 410 rfl ch0
-    (seed_step 410 410 820 rfl ch1
-    (seed_step 820 410 1230 rfl ch2
-    (seed_step 1230 410 1640 rfl ch3
-    (seed_step 1640 41 1681 rfl ch4x0
-    (seed_step 1681 41 1722 rfl ch4x1
-    (seed_step 1722 41 1763 rfl ch4x2
-    (seed_step 1763 41 1804 rfl ch4x3
-    (seed_step 1804 41 1845 rfl ch4x4
-    (seed_step 1845 41 1886 rfl ch4x5
-    (seed_step 1886 41 1927 rfl ch4x6
-    (seed_step 1927 41 1968 rfl ch4x7
-    (seed_step 1968 41 2009 rfl ch4x8
-    (seed_step 2009 41 2050 rfl ch4x9
-    (seed_step 2050 410 2460 rfl ch5
-    (seed_step 2460 410 2870 rfl ch6
-    (seed_step 2870 410 3280 rfl ch7
-    (seed_step 3280 410 3690 rfl ch8
-    (seed_step 3690 410 4100 rfl ch9
-    (seed_step 4100 410 4510 rfl ch10
-    (seed_step 4510 410 4920 rfl ch11
-    (seed_step 4920 410 5330 rfl ch12
-    (seed_step 5330 410 5740 rfl ch13
-    (seed_step 5740 410 6150 rfl ch14
-    (seed_step 6150 410 6560 rfl ch15
-    (seed_step 6560 410 6970 rfl ch16
-    (seed_step 6970 410 7380 rfl ch17
-    (seed_step 7380 410 7790 rfl ch18
-    (seed_step 7790 410 8200 rfl ch19
-    (seed_step 8200 410 8610 rfl ch20
-    (seed_step 8610 410 9020 rfl ch21
-    (seed_step 9020 410 9430 rfl ch22
-    (seed_step 9430 410 9840 rfl ch23
-    (seed_step 9840 410 10250 rfl ch24
-    (seed_step 10250 410 10660 rfl ch25
-    (seed_step 10660 410 11070 rfl ch26
-    (seed_step 11070 410 11480 rfl ch27
-    (seed_step 11480 410 11890 rfl ch28
-    (seed_step 11890 410 12300 rfl ch29
-    (seed_step 12300 410 12710 rfl ch30
-    (seed_step 12710 410 13120 rfl ch31
-    (seed_step 13120 410 13530 rfl ch32
-    (seed_step 13530 410 13940 rfl ch33
-    (seed_step 13940 410 14350 rfl ch34
-    (seed_step 14350 410 14760 rfl ch35
-    (seed_step 14760 410 15170 rfl ch36
-    (seed_step 15170 410 15580 rfl ch37
-    (seed_step 15580 410 15990 rfl ch38
-    (seed_step 15990 410 16400 rfl ch39
-    (seed_step 16400 410 16810 rfl ch40
-    (fun idx h1 h2 => absurd h2 (Nat.not_lt.mpr h1)))))))))))))))))))))))))))))))))))))))))))))))))))) idx (Nat.zero_le _) h
+theorem allChunks : forall k, k < 16 -> chunkOK k = true := by
+  intro k hk
+  interval_cases k
+  exacts [ck0, ck1, ck2, ck3, ck4, ck5, ck6, ck7, ck8, ck9, ck10, ck11, ck12, ck13, ck14, ck15]
 
+theorem allPairs : HallP := by
+  intro i c hi hc ho
+  have hb : (!ocheck i c || (Nat.blt 0 (chunkOf i c) && Nat.ble (chunkOf i c) 16)) = true :=
+    allBelow_spec _ _ (allBelow_spec _ _ codeBound_ok i hi) c hc
+  rw [ho, Bool.not_true, Bool.false_or, Bool.and_eq_true, Nat.blt_eq, Nat.ble_eq] at hb
+  have h : (!Nat.beq (chunkOf i c) (Nat.add (chunkOf i c - 1) 1) || pairOK i c) = true :=
+    allBelow_spec _ _ (allBelow_spec _ _ (allChunks (chunkOf i c - 1) (by omega)) i hi) c hc
+  have e : Nat.add (chunkOf i c - 1) 1 = chunkOf i c := by show chunkOf i c - 1 + 1 = chunkOf i c; omega
+  rw [e, Nat.beq_refl] at h
+  simpa using h
 set_option maxRecDepth 100000 in
 set_option maxHeartbeats 0 in
 theorem cc0 : compCheck 0 = true := by decide +kernel
@@ -6991,5 +6987,5 @@ theorem PEqualNP.Outside.L_meta_1404 : ¬ (∀ T : ℕ → Set ((Fin 15 → Bool
   intro h
   exact PEqualNP.Outside.L_meta_1404.fTarget_not6 (h PEqualNP.Outside.L_meta_1404.Tfam
     PEqualNP.Outside.L_meta_1404.Tfam_base
-    (PEqualNP.Outside.L_meta_1404.Tfam_mono PEqualNP.Outside.L_meta_1404.allSeeds PEqualNP.Outside.L_meta_1404.allComp)
-    (PEqualNP.Outside.L_meta_1404.Tfam_closed PEqualNP.Outside.L_meta_1404.allSeeds PEqualNP.Outside.L_meta_1404.allComp))
+    (PEqualNP.Outside.L_meta_1404.Tfam_mono PEqualNP.Outside.L_meta_1404.allPairs PEqualNP.Outside.L_meta_1404.allComp)
+    (PEqualNP.Outside.L_meta_1404.Tfam_closed PEqualNP.Outside.L_meta_1404.allPairs PEqualNP.Outside.L_meta_1404.allComp))
